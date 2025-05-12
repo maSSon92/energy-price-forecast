@@ -157,10 +157,11 @@ def history_detail(data):
 @main.route('/export/<data>.pdf')
 def export_pdf(data):
     filename = f"export_{data}.pdf"
-    path = os.path.join("app", "static", "exports", filename)
+    folder = os.path.join("app", "static", "exports")
+    os.makedirs(folder, exist_ok=True)  
+    path = os.path.abspath(os.path.join(folder, filename))
     export_day_to_pdf(data, path)
     return send_file(path, as_attachment=True)
-
 @main.route('/downloads')
 def downloads():
     folder = os.path.join('app', 'static', 'exports')
