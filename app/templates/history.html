@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Historia prognoz{% endblock %}
+
+{% block content %}
+<h1>🕓 Historia prognoz</h1>
+<p>Tabela poniżej zawiera dane z bazy: prognozy, ceny rzeczywiste i obliczone błędy.</p>
+
+<form method="get" action="{{ url_for('main.history') }}" style="margin-bottom: 1em;">
+    <label for="date">Filtruj po dacie:</label>
+    <input type="date" name="date" id="date" value="{{ selected_date }}">
+    <button type="submit">Filtruj</button>
+    <a href="{{ url_for('main.history') }}">Wyczyść</a>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Godzina</th>
+            <th>Prognoza</th>
+            <th>Rzeczywista</th>
+            <th>Błąd</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+        <tr>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[3] }}</td>
+            <td>{{ row[4] if row[4] is not none else '-' }}</td>
+            <td>{{ row[5]|round(2) if row[5] is not none else '-' }}</td>
+            <td><a href="{{ url_for('main.history_detail', data=row[1]) }}">Szczegóły</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

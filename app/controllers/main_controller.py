@@ -8,7 +8,10 @@ from app.models.prediction_model import (
     load_data_from_excel
 )
 from app.models.generate_chart import generate_error_chart
-from app.models.database import save_prediction
+from app.models.database import save_prediction, get_all_predictions
+from app.models.pdf_export import export_day_to_pdf
+import sqlite3
+import matplotlib.pyplot as plt
 
 main = Blueprint('main', __name__)
 
@@ -106,6 +109,57 @@ def stats():
     mae_fix_i = 5.23
     mae_fix_ii = 6.42
     return render_template('stats.html', plot_url=plot_url, wykres_bledow=wykres_bledow, mae_fix_i=mae_fix_i, mae_fix_ii=mae_fix_ii)
+
+@main.route('/history')
+def history():
+    selected_date = request.args.get('date')
+    rows = []
+    if selected_date:
+        conn = sqlite3.connect("app/static/data/predictions.db")
+        c = conn.cursor()
+        c.execute("SELECT * FROM predictions WHERE data = ? ORDER BY godzina", (selected_date,))
+        rows = c.fetchall()
+        conn.close()
+    else:
+        rows = get_all_predictions()
+    return render_template('history.html', rows=rows, selected_date=selected_date)
+
+@main.route('/history/<data>')
+def history_detail(data):
+    conn = sqlite3.connect("app/static/data/predictions.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM predictions WHERE data = ? ORDER BY godzina", (data,))
+    rows = c.fetchall()
+    conn.close()
+
+    godziny = [row[2] for row in rows]
+    prognozy = [row[3] for row in rows]
+    rzeczywiste = [row[4] for row in rows if row[4] is not None]
+    if rzeczywiste:
+        plt.figure(figsize=(10, 5))
+        plt.plot(godziny, prognozy, label="Prognoza", marker='o')
+        plt.plot(godziny, [row[4] if row[4] is not None else None for row in rows], label="Rzeczywista", marker='x')
+        plt.title(f"Prognoza vs Rzeczywista – {data}")
+        plt.xlabel("Godzina")
+        plt.ylabel("Cena")
+        plt.legend()
+        plt.grid(True)
+        wykres_path = os.path.join("app", "static", "exports", f"wykres_{data}.png")
+        plt.tight_layout()
+        plt.savefig(wykres_path)
+        plt.close()
+        plot_url = url_for('static', filename=f"exports/wykres_{data}.png")
+    else:
+        plot_url = None
+
+    return render_template('history_detail.html', rows=rows, data=data, plot_url=plot_url)
+
+@main.route('/export/<data>.pdf')
+def export_pdf(data):
+    filename = f"export_{data}.pdf"
+    path = os.path.join("app", "static", "exports", filename)
+    export_day_to_pdf(data, path)
+    return send_file(path, as_attachment=True)
 
 @main.route('/downloads')
 def downloads():

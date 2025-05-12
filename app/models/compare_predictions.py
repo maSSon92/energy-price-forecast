@@ -1,8 +1,7 @@
 import pandas as pd
 import os
 from datetime import datetime, timedelta
-from .database import update_actual_price
-
+from app.models.database import update_actual_price
 
 def compare_predictions_to_actuals():
     print("🔍 Rozpoczynam porównanie prognoz z rzeczywistością...")
