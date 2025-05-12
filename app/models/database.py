@@ -22,12 +22,17 @@ def init_db():
     conn.close()
 
 def save_prediction(data, godzina, cena_prognoza):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect("app/static/data/predictions.db")
     c = conn.cursor()
-    c.execute("""
-        INSERT INTO predictions (data, godzina, cena_prognoza)
-        VALUES (?, ?, ?)
-    """, (data, godzina, cena_prognoza))
+
+    # Sprawdzenie czy istnieje już taki rekord
+    c.execute("SELECT id FROM predictions WHERE data = ? AND godzina = ?", (data, godzina))
+    exists = c.fetchone()
+
+    if not exists:
+        c.execute("INSERT INTO predictions (data, godzina, cena_prognoza) VALUES (?, ?, ?)",
+                  (data, godzina, cena_prognoza))
+
     conn.commit()
     conn.close()
 
