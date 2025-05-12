@@ -1,7 +1,7 @@
 from app.models.compare_predictions import compare_predictions_to_actuals
 from app.models.generate_chart import generate_error_chart
 from app.models.database import update_actual_price
-from app.models.xgb_model import fetch_actual_prices
+import app.models.xgb_model as xgb_model
 from datetime import datetime, timedelta
 import pandas as pd
 import os
@@ -27,7 +27,7 @@ if __name__ == "__main__":
             exit()
 
         pred_df = pd.read_excel(pred_path)
-        actual_prices = fetch_actual_prices(date_str)
+        actual_prices = xgb_model.fetch_actual_prices(date_str)
         if not actual_prices:
             print("❌ Brak danych rzeczywistych z API PSE")
             exit()

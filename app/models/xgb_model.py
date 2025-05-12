@@ -70,6 +70,23 @@ def fetch_weather_forecast(target_date, lat=52.23, lon=21.01):
         print(f"Weather API error: {e}")
     return {}
 
+def fetch_actual_prices(date_str):
+    url = f"https://api.raporty.pse.pl/api/rce-pln?$filter=business_date eq '{date_str}'"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get('value', [])
+            result = {}
+            for item in data:
+                if 'udtczas' in item and 'rce_pln' in item:
+                    hour = int(item['udtczas'][-8:-6])
+                    kurs = float(item['rce_pln'])
+                    result[hour] = {"fix_i": kurs, "fix_ii": kurs}
+            return result
+    except Exception as e:
+        print(f"[fetch_actual_prices] Błąd pobierania: {e}")
+    return {}
+
 
 def fetch_pse_load_forecast(target_date):
     url = f"https://api.raporty.pse.pl/api/daily-load-forecast?$filter=business_date eq '{target_date}'"
