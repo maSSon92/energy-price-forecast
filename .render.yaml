@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: energy-price-forecast
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python run.py"
+    pythonVersion: 3.11.11
