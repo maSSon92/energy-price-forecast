@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Strona główna{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 40px; animation: fadeIn 1.2s ease-in-out;">
+    <img src="/static/images/hero_energy_forecast.png" alt="Hero Energy Forecast" style="width: 100%; max-width: 900px; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);">
+</div>
+
+<h1>🔋 Prognozowanie cen energii elektrycznej</h1>
+<p>
+    Witaj w aplikacji do prognozowania godzinowych cen energii elektrycznej w Polsce!<br><br>
+    Nasz system wykorzystuje dane historyczne oraz aktualne informacje z API (pogoda, zużycie energii, kursy Fixing),
+    by oszacować ceny energii na najbliższy dzień. Prognozy pomagają użytkownikom podejmować świadome decyzje dotyczące zużycia prądu i planowania kosztów.
+</p>
+<p>
+    Projekt powstał jako część pracy inżynierskiej i jest stale rozwijany. Zachęcamy do korzystania z zakładek powyżej,
+    aby zobaczyć szczegóły, skorzystać z predykcji lub skontaktować się z autorem.
+</p>
+<a href="https://www.youtube.com/watch?v=OAn40128fy8" target="_blank" class="yt-btn">🎬 Najlepsza reklama Toyoty</a>
+
+<section style="display: grid; gap: 30px; margin-top: 60px;">
+  <div style="text-align: center; animation: fadeIn 1.2s ease-in-out;">
+    <h2 style="color: #004080; font-size: 24px;">🔍 Jak to działa?</h2>
+    <p>Cały proces prognozy składa się z 4 inteligentnych kroków:</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
+    <div style="padding: 20px; background: #f9fbff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+      <h3>📥 Dane wejściowe</h3>
+      <p>API PSE, prognozy pogody i dane historyczne z Excela</p>
+    </div>
+    <div style="padding: 20px; background: #f9fbff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+      <h3>🧠 Uczenie maszynowe</h3>
+      <p>XGBoost i RandomForest analizują trendy i czynniki wpływu</p>
+    </div>
+    <div style="padding: 20px; background: #f9fbff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+      <h3>📊 Predykcja</h3>
+      <p>Prognoza cen Fixing I i II na każdą godzinę dnia</p>
+    </div>
+    <div style="padding: 20px; background: #f9fbff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+      <h3>📁 Eksport danych</h3>
+      <p>Zapis do Excela, analiza błędów, porównania i raporty PDF</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

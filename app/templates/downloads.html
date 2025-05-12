@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Do pobrania{% endblock %}
+
+{% block content %}
+<h1>⬇️ Pliki do pobrania</h1>
+<p>
+    Tutaj znajdziesz archiwalne prognozy zapisane w formacie Excel oraz PDF.
+    Dane mogą służyć do dalszej analizy, porównań lub prezentacji.
+</p>
+
+<ul>
+    {% for file in files %}
+    <li><a href="{{ url_for('static', filename='exports/' + file) }}" download>{{ file }}</a></li>
+    {% endfor %}
+</ul>
+
+{% if not files %}
+<p>Brak dostępnych plików do pobrania.</p>
+{% endif %}
+{% endblock %}

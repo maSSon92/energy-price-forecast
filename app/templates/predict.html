@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Prognozuj cenę energii{% endblock %}
+
+{% block content %}
+<h1>🔌 Prognozuj cenę energii elektrycznej</h1>
+
+<form method="post" class="form">
+    <label for="day">📅 Dzień:</label>
+    <input type="number" id="day" name="day" min="1" max="31" required>
+
+    <label for="month">📆 Miesiąc:</label>
+    <input type="number" id="month" name="month" min="1" max="12" required>
+
+    <label for="mode">Zakres prognozy:</label>
+    <select name="mode" id="mode" required>
+        <option value="hour">Konkretna godzina</option>
+        <option value="day">Cały dzień (00–23)</option>
+    </select>
+
+    <div id="hour-input">
+        <label for="hour">🕒 Godzina (0-23):</label>
+        <input type="number" id="hour" name="hour" min="0" max="23">
+    </div>
+
+    <button type="submit">🔍 Prognozuj</button>
+</form>
+
+<script>
+  const modeSelector = document.getElementById('mode');
+  const hourInput = document.getElementById('hour-input');
+  modeSelector.addEventListener('change', () => {
+    hourInput.style.display = modeSelector.value === 'hour' ? 'block' : 'none';
+  });
+
+  window.onload = () => {
+    hourInput.style.display = modeSelector.value === 'hour' ? 'block' : 'none';
+  };
+</script>
+
+{% if prediction %}
+    <div class="result">
+        <h2>🔮 Prognozowana cena: {{ prediction }} PLN/MWh</h2>
+    </div>
+{% elif day_predictions %}
+    <div class="result">
+        <h2>📈 Prognozy godzinowe:</h2>
+        <table>
+            <thead>
+                <tr><th>Godzina</th><th>Cena [PLN/MWh]</th></tr>
+            </thead>
+            <tbody>
+                {% for row in day_predictions %}
+                <tr>
+                    <td>{{ row['Godzina'] }}</td>
+                    <td>{{ row['Cena'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ download_link }}" class="download-btn">⬇️ Pobierz prognozę do Excela</a>
+    </div>
+{% endif %}
+
+{% if error %}
+    <div class="error">⚠️ {{ error }}</div>
+{% endif %}
+
+<a href="https://www.youtube.com/watch?v=OAn40128fy8" target="_blank" class="yt-btn">▶️ Obejrzyj na YouTube</a>
+{% endblock %}

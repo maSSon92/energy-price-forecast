@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Statystyki{% endblock %}
+
+{% block content %}
+<h1>📊 Statystyki i analiza błędów</h1>
+<p>
+    Poniżej znajdują się podstawowe informacje o skuteczności modelu predykcyjnego w porównaniu do rzeczywistych danych.
+</p>
+<ul>
+    <li>🔹 Średni błąd względny Fixing I: <strong>{{ mae_fix_i }}%</strong></li>
+    <li>🔹 Średni błąd względny Fixing II: <strong>{{ mae_fix_ii }}%</strong></li>
+</ul>
+
+{% if plot_url %}
+    <h2>📈 Wykres porównania prognozy z rzeczywistością</h2>
+    <img src="{{ plot_url }}" alt="Wykres porównania" style="width:100%;max-width:800px;border:1px solid #ccc;padding:10px;">
+{% else %}
+    <p>Brak dostępnych danych statystycznych do wyświetlenia wykresu.</p>
+{% endif %}
+
+{% endblock %}

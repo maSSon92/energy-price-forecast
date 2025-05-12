@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Prognoza cen energii</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Prognozuj cenę energii elektrycznej</h1>
+
+        <form method="post" class="form">
+            <label for="date">📅 Wybierz datę:</label>
+            <input type="date" id="date" name="date" required>
+        
+            <label>
+                <input type="checkbox" name="hour_mode" id="hour_mode">
+                🔘 Tylko konkretna godzina
+            </label>
+        
+            <div id="hour-input">
+                <label for="hour">🕒 Godzina (0-23):</label>
+                <input type="number" id="hour" name="hour" min="0" max="23">
+            </div>
+        
+            <button type="submit">🔍 Prognozuj</button>
+        </form>
+        
+        <script>
+          const hourMode = document.getElementById('hour_mode');
+          const hourInput = document.getElementById('hour-input');
+        
+          hourMode.addEventListener('change', () => {
+            hourInput.style.display = hourMode.checked ? 'block' : 'none';
+          });
+        
+          // domyślnie pokaż godziny tylko jeśli checkbox zaznaczony
+          window.onload = () => {
+            hourInput.style.display = hourMode.checked ? 'block' : 'none';
+          };
+        </script>
+        
+        
+
+        {% if prediction %}
+            <div class="result">
+                <h2>🔮 Prognozowana cena: {{ prediction }} PLN/MWh</h2>
+            </div>
+        {% elif day_predictions %}
+            <div class="result">
+                <h2>📈 Prognozy godzinowe:</h2>
+                <table>
+                    <thead>
+                        <tr><th>Godzina</th><th>Cena [PLN/MWh]</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in day_predictions %}
+                        <tr>
+                            <td>{{ row['Godzina'] }}</td>
+                            <td>{{ row['Cena'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <a href="{{ download_link }}" class="download-btn">⬇️ Pobierz prognozę do Excela</a>
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <a href="https://www.youtube.com/watch?v=OAn40128fy8" target="_blank" class="yt-btn">▶️ Obejrzyj na YouTube</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}O projekcie{% endblock %}
+
+{% block content %}
+<h1>🧠 O projekcie</h1>
+<p>
+    Aplikacja została stworzona w celu prognozowania cen energii elektrycznej w Polsce z wykorzystaniem danych historycznych oraz aktualnych danych z API (m.in. PSE, Open-Meteo).
+</p>
+<p>
+    W ramach projektu użyto algorytmów uczenia maszynowego, takich jak <strong>XGBoost</strong> oraz <strong>Random Forest</strong>. Model uwzględnia również czynniki pogodowe, święta, porę dnia oraz prognozowane zapotrzebowanie na energię.
+</p>
+<p>
+    Główne cele projektu:
+    <ul>
+        <li>⏳ Ułatwienie przewidywania kosztów energii</li>
+        <li>📈 Możliwość porównania predykcji z danymi rzeczywistymi</li>
+        <li>📊 Eksport danych do Excela i PDF</li>
+    </ul>
+</p>
+<p>
+    Projekt ten powstał jako część pracy inżynierskiej realizowanej na uczelni Merito Warszawa pod opieką Piotra Bilskiego.
+</p>
+{% endblock %}
