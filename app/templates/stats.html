@@ -13,10 +13,15 @@
 </ul>
 
 {% if plot_url %}
-    <h2>📈 Wykres porównania prognozy z rzeczywistością</h2>
-    <img src="{{ plot_url }}" alt="Wykres porównania" style="width:100%;max-width:800px;border:1px solid #ccc;padding:10px;">
+    <h2>📈 Wykres porównania Fixing</h2>
+    <img src="{{ plot_url }}" alt="Wykres Fixing" style="width:100%; max-width:800px; border:1px solid #ccc; padding:10px; border-radius: 12px;">
+{% endif %}
+
+{% if wykres_bledow %}
+    <h2>📉 Historia błędów modelu</h2>
+    <img src="{{ wykres_bledow }}" alt="Wykres błędów" style="width:100%; max-width:800px; border:1px solid #ccc; padding:10px; border-radius: 12px;">
 {% else %}
-    <p>Brak dostępnych danych statystycznych do wyświetlenia wykresu.</p>
+    <p>Brak danych błędów dziennych do wyświetlenia wykresu.</p>
 {% endif %}
 
 {% endblock %}

@@ -7,6 +7,8 @@ from app.models.prediction_model import (
     prepare_input_dataframe_for_day, train_model,
     load_data_from_excel
 )
+from app.models.generate_chart import generate_error_chart
+from app.models.database import save_prediction
 
 main = Blueprint('main', __name__)
 
@@ -19,6 +21,15 @@ def home():
         return redirect(url_for('main.home'))
     return render_template('home.html')
 
+def validate_date(day, month):
+    try:
+        today = datetime.today().date()
+        target_date = datetime(datetime.today().year, month, day).date()
+        max_date = today + timedelta(days=7)
+        return today <= target_date <= max_date
+    except Exception:
+        return False
+
 @main.route('/predict', methods=['GET', 'POST'])
 def predict():
     prediction = None
@@ -30,6 +41,14 @@ def predict():
         try:
             day = int(request.form['day'])
             month = int(request.form['month'])
+            if not validate_date(day, month):
+                error = "❌ Nieprawidłowa data — wybierz dzień od dziś do 7 dni w przód."
+                return render_template('predict.html',
+                           prediction=None,
+                           error=error,
+                           day_predictions=None,
+                           download_link=None)
+
             mode = request.form.get('mode')
 
             df = load_data_from_excel()
@@ -41,8 +60,12 @@ def predict():
             elif mode == 'day':
                 df_input = prepare_input_dataframe_for_day(day, month)
                 day_predictions = predict_all_hours(df_input, model)
+                data_str = datetime(datetime.today().year, month, day).strftime('%Y-%m-%d')
                 for row in day_predictions:
-                    row["Cena"] = row.pop("Prognozowana cena")
+                    godzina = row.get("Godzina")
+                    cena = row.pop("Prognozowana cena")
+                    row["Cena"] = cena
+                    save_prediction(data_str, godzina, cena)
 
                 filename = f"prognoza_{day:02d}_{month:02d}.xlsx"
                 folder = os.path.join('static', 'exports')
@@ -76,12 +99,13 @@ def contact():
 
 @main.route('/stats')
 def stats():
-    # Tu możesz dodać odczyt wykresu i błędów z pliku
+    generate_error_chart()
     plot_path = os.path.join('static', 'exports', 'wykres.png')
     plot_url = url_for('static', filename='exports/wykres.png') if os.path.exists(plot_path) else None
+    wykres_bledow = url_for('static', filename='exports/wykres_bledow.png') if os.path.exists('app/static/exports/wykres_bledow.png') else None
     mae_fix_i = 5.23
     mae_fix_ii = 6.42
-    return render_template('stats.html', plot_url=plot_url, mae_fix_i=mae_fix_i, mae_fix_ii=mae_fix_ii)
+    return render_template('stats.html', plot_url=plot_url, wykres_bledow=wykres_bledow, mae_fix_i=mae_fix_i, mae_fix_ii=mae_fix_ii)
 
 @main.route('/downloads')
 def downloads():
