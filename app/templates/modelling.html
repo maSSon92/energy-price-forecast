@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Porównanie modeli ML{% endblock %}
+
+{% block content %}
+<h1>🧠 Porównanie modeli uczenia maszynowego</h1>
+<p>W poniższej tabeli znajdziesz wyniki trzech modeli predykcyjnych przetestowanych na tych samych danych:</p>
+
+{% if error %}
+    <div class="error">⚠️ Błąd: {{ error }}</div>
+{% endif %}
+
+{% if table %}
+  <h2>📊 Wykres MAE</h2>
+  <img src="{{ url_for('static', filename='exports/porownanie_mae.png') }}" style="max-width:100%; border-radius:12px; border:1px solid #ccc;">
+{% endif %}
+
+{% if table %}
+<table>
+    <thead>
+        <tr>
+            <th>Model</th>
+            <th>MAE</th>
+            <th>RMSE</th>
+            <th>R²</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in table %}
+        <tr>
+            <td>{{ row['Model'] }}</td>
+            <td>{{ row['MAE'] }}</td>
+            <td>{{ row['RMSE'] }}</td>
+            <td>{{ row['R2'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Brak wyników do wyświetlenia.</p>
+{% endif %}
+
+{% endblock %}

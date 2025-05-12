@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Panel administracyjny – logowanie{% endblock %}
+
+{% block content %}
+<h1>🔐 Logowanie do panelu administracyjnego</h1>
+<p>Wprowadź hasło, aby uzyskać dostęp do edycji prognoz:</p>
+
+<form method="post" class="form" style="max-width: 400px; margin: auto;">
+    <label for="password">Hasło administratora:</label>
+    <input type="password" name="password" id="password" required>
+    <button type="submit">🔓 Zaloguj</button>
+</form>
+
+{% if error %}
+<div class="error">{{ error }}</div>
+{% endif %}
+{% endblock %}

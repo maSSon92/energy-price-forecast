@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, send_file, url_for, redirect
+from flask import Blueprint, render_template, request, send_file, url_for, redirect, session
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -10,6 +10,7 @@ from app.models.prediction_model import (
 from app.models.generate_chart import generate_error_chart
 from app.models.database import save_prediction, get_all_predictions
 from app.models.pdf_export import export_day_to_pdf
+from app.models.model_evaluator import evaluate_models
 import sqlite3
 import matplotlib.pyplot as plt
 
@@ -18,6 +19,49 @@ main = Blueprint('main', __name__)
 df = load_data_from_excel()
 model = train_model(df)
 
+SECRET_PASSWORD = "admin123"  # można potem ukryć jako zmienną środowiskową
+
+@main.route('/admin', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == SECRET_PASSWORD:
+            session['admin'] = True
+            return redirect(url_for('main.admin_panel'))
+        else:
+            error = "❌ Niepoprawne hasło."
+    return render_template('admin_login.html', error=error)
+
+@main.route('/admin/panel')
+def admin_panel():
+    if not session.get('admin'):
+        return redirect(url_for('main.admin_login'))
+
+    conn = sqlite3.connect("app/static/data/predictions.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM predictions ORDER BY data, godzina")
+    rows = c.fetchall()
+    conn.close()
+
+    return render_template("admin_panel.html", rows=rows)
+
+@main.route('/admin/update', methods=['POST'])
+def admin_update():
+    if not session.get('admin'):
+        return redirect(url_for('main.admin_login'))
+
+    data = request.form.get('data')
+    godzina = int(request.form.get('godzina'))
+    new_value = float(request.form.get('cena_rzeczywista'))
+
+    conn = sqlite3.connect("app/static/data/predictions.db")
+    c = conn.cursor()
+    c.execute("UPDATE predictions SET cena_rzeczywista = ?, blad = ABS(cena_prognoza - ?) WHERE data = ? AND godzina = ?", (new_value, new_value, data, godzina))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('main.admin_panel'))
 @main.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -32,6 +76,15 @@ def validate_date(day, month):
         return today <= target_date <= max_date
     except Exception:
         return False
+
+@main.route('/modelling')
+def modelling():
+    try:
+        df = load_data_from_excel()
+        comparison_df = evaluate_models(df)
+        return render_template('modelling.html', table=comparison_df.to_dict(orient='records'))
+    except Exception as e:
+        return render_template('modelling.html', error=str(e), table=[])
 
 @main.route('/predict', methods=['GET', 'POST'])
 def predict():
