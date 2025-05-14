@@ -6,6 +6,10 @@ from app.models.database import save_prediction
 from app.models.exports.export_utils import save_predictions
 from app.models.evaluation.compare import compare_predictions_to_actuals
 from app.models.exports.pdf_report import generate_pdf_report
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def run_daily_prediction():
     print("📅 Uruchamiam codzienną prognozę...")
