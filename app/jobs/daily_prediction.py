@@ -16,28 +16,31 @@ def run_daily_prediction():
             print("❌ Brak danych wejściowych")
             return
 
-        day_predictions = predict_all_hours(df)
-        today = datetime.now().date().strftime("%Y-%m-%d")
+        # Wygeneruj prognozę na jutro
+        predictions = predict_all_hours(df)
+        today_str = datetime.now().date().strftime("%Y-%m-%d")
 
-        for row in day_predictions:
+        # Zapisz każdą godzinę do bazy danych
+        for row in predictions:
             godzina = row.get("Godzina")
             cena = row.get("Prognozowana cena")
-            save_prediction(today, godzina, cena)
+            save_prediction(today_str, godzina, cena)
 
-        # przygotuj DataFrame do eksportu
-        df_export = pd.DataFrame(day_predictions)
+        # Przygotuj dane do eksportu
+        df_export = pd.DataFrame(predictions)
         df_export["Hour"] = df_export["Godzina"]
         df_export["Predicted Fixing I - Kurs"] = df_export["Prognozowana cena"]
         df_export["Predicted Fixing II - Kurs"] = df_export["Prognozowana cena"]
 
         excel_path, chart_path = save_predictions(df_export)
         compare_predictions_to_actuals()
-        generate_pdf_report(df_export, chart_path)
+        generate_pdf_report(df_export, image_path=chart_path)
 
-        print("✅ Prognoza zakończona sukcesem!")
+        print(f"✅ Zakończono prognozowanie i zapis do {excel_path}")
 
     except Exception as e:
-        print(f"🚨 Błąd: {e}")
+        print(f"🚨 Błąd podczas prognozy: {e}")
+
 
 if __name__ == "__main__":
     run_daily_prediction()
