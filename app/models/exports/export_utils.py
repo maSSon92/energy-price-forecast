@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-def save_predictions(predictions_df, folder="results"):
+def save_predictions(predictions_df, folder="app/static/exports"):
     today_str = datetime.now().strftime('%Y-%m-%d')
     filename = f"Prognoza_{today_str}.xlsx"
     filepath = os.path.join(folder, filename)
