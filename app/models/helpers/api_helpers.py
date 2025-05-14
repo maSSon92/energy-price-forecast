@@ -35,3 +35,30 @@ def fetch_weather_forecast(date_str, lat=52.23, lon=21.01):
     except Exception as e:
         print(f"[WEATHER] Błąd: {e}")
     return {}
+
+def fetch_actual_prices(target_date):
+    """
+    Pobiera rzeczywiste ceny Fixing I/II z API PSE dla danej daty.
+    Zwraca dict: godzina -> {"fix_i": ..., "fix_ii": ...}
+    """
+    url = f"https://api.raporty.pse.pl/api/rce-pln?$filter=business_date eq '{target_date}'"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get("value", [])
+            result = {}
+            for item in data:
+                czas = item.get("udtczas", "")
+                price = item.get("rce_pln", None)
+                if czas.endswith(":00:00") and price is not None:
+                    hour = int(czas[-8:-6])
+                    result[hour] = {
+                        "fix_i": float(price),
+                        "fix_ii": float(price)
+                    }
+            return result
+        else:
+            print(f"❌ Błąd API PSE (actual prices): {response.status_code}")
+    except Exception as e:
+        print(f"❌ Wyjątek podczas pobierania rzeczywistych cen: {e}")
+    return {}
