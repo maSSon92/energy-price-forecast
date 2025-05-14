@@ -11,6 +11,9 @@ from app.models.generate_chart import generate_error_chart
 from app.models.database import save_prediction, get_all_predictions
 from app.models.pdf_export import export_day_to_pdf
 from app.models.model_evaluator import evaluate_models
+from app.models.exports.export_utils import save_predictions
+from app.models.exports.pdf_report import generate_pdf_report
+from app.models.evaluation.compare import compare_predictions_to_actuals
 import sqlite3
 import matplotlib.pyplot as plt
 
@@ -85,6 +88,60 @@ def modelling():
         return render_template('modelling.html', table=comparison_df.to_dict(orient='records'))
     except Exception as e:
         return render_template('modelling.html', error=str(e), table=[])
+
+@main.route('/', methods=['GET', 'POST'])
+def index():
+    from app.models.exports.export_utils import save_predictions
+    from app.models.evaluation.compare import compare_predictions_to_actuals
+    from app.models.exports.pdf_report import generate_pdf_report
+
+    prediction = None
+    error = None
+    day_predictions = None
+    download_link = None
+
+    if request.method == 'POST':
+        try:
+            day = int(request.form['day'])
+            month = int(request.form['month'])
+
+            df = load_data_from_excel()
+            df_input = prepare_input_dataframe_for_day(day, month)
+
+            if df_input.empty:
+                raise ValueError("Nie udało się przygotować danych wejściowych.")
+
+            # 🔮 Predykcja XGBoost
+            day_predictions = predict_all_hours(df)
+
+            for row in day_predictions:
+                row["Cena"] = row.pop("Prognozowana cena")
+
+            # 📥 Zapisz do Excela i wykres
+            df_export = pd.DataFrame(day_predictions)
+            df_export["Hour"] = list(range(24))
+            df_export["Predicted Fixing I - Kurs"] = df_export["Cena"]
+            df_export["Predicted Fixing II - Kurs"] = df_export["Cena"]
+
+            excel_path, chart_path = save_predictions(df_export)
+
+            # ✅ Porównanie z rzeczywistymi danymi (jeśli już są)
+            compare_predictions_to_actuals()
+
+            # 📝 Raport PDF
+            generate_pdf_report(df_export, image_path=chart_path)
+
+            download_link = "/static/exports/" + os.path.basename(excel_path)
+
+        except Exception as e:
+            error = f"❌ Błąd danych wejściowych lub predykcji: {e}"
+
+    return render_template('index.html',
+                           prediction=prediction,
+                           error=error,
+                           day_predictions=day_predictions,
+                           download_link=download_link)
+
 
 @main.route('/predict', methods=['GET', 'POST'])
 def predict():
