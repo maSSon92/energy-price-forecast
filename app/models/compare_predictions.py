@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from app.models.database import update_actual_price
 
 def compare_predictions_to_actuals():
-    print("🔍 Rozpoczynam porównanie prognoz z rzeczywistością...")
+    print("🔍 Porównuję Fixing I i II z rzeczywistymi danymi...")
 
     now = datetime.now()
     if now.hour < 15:
@@ -15,57 +15,39 @@ def compare_predictions_to_actuals():
     day = date_to_check.day
     month = date_to_check.month
 
-    prediction_file_path = f"app/static/exports/prognoza_{day:02d}_{month:02d}.xlsx"
-    actual_file_path = f"dane_rzeczywiste_{day:02d}_{month:02d}.xlsx"
-    output_csv = "app/static/exports/historyczne_bledy.csv"
-
-    print(f"📂 Oczekiwane pliki:")
-    print(f"- Prognoza: {prediction_file_path}")
-    print(f"- Rzeczywiste: {actual_file_path}")
+    pred_file = f"app/static/exports/prognoza_{day:02d}_{month:02d}.xlsx"
+    actual_file = f"dane_rzeczywiste_{day:02d}_{month:02d}.xlsx"
 
     try:
-        pred_df = pd.read_excel(prediction_file_path)
-        actual_df = pd.read_excel(actual_file_path)
+        pred_df = pd.read_excel(pred_file)
+        actual_df = pd.read_excel(actual_file)
     except Exception as e:
-        print(f"❌ Błąd podczas wczytywania danych: {e}")
+        print(f"❌ Błąd wczytywania plików: {e}")
         return
 
-    if 'Prognozowana cena' in pred_df.columns:
-        pred_df.rename(columns={'Prognozowana cena': 'Cena'}, inplace=True)
-
-    if 'Godzina' not in pred_df or 'Cena' not in pred_df:
-        print("❌ Brakuje wymaganych kolumn w pliku prognozy")
+    # Sprawdzenie kolumn
+    required_cols = ["Fixing I - Kurs", "Fixing II - Kurs", "Hour"]
+    if not all(col in actual_df.columns for col in required_cols):
+        print("❌ Brakuje wymaganych kolumn w pliku rzeczywistym.")
         return
 
-    if 'Godzina' not in actual_df or 'Cena' not in actual_df:
-        print("❌ Brakuje wymaganych kolumn w pliku rzeczywistym")
-        return
+    # Porównanie
+    merged = pd.merge(pred_df, actual_df, on="Hour", suffixes=("_prognoza", "_rzeczywista"))
 
-    merged = pd.merge(pred_df, actual_df, on='Godzina', suffixes=('_prognoza', '_rzeczywista'))
-    merged['Blad [%]'] = abs(merged['Cena_prognoza'] - merged['Cena_rzeczywista']) / merged['Cena_rzeczywista'] * 100
+    merged["Fixing I % Difference"] = abs(
+        merged["Predicted Fixing I - Kurs"] - merged["Fixing I - Kurs"]) / merged["Fixing I - Kurs"] * 100
+    merged["Fixing II % Difference"] = abs(
+        merged["Predicted Fixing II - Kurs"] - merged["Fixing II - Kurs"]) / merged["Fixing II - Kurs"] * 100
 
-    sredni_blad = merged['Blad [%]'].mean()
-    print(f"✅ Średni błąd dla dnia {date_to_check}: {round(sredni_blad, 2)}%")
-
-    merged['Data'] = date_to_check.strftime('%Y-%m-%d')
-    merged['MAE'] = abs(merged['Cena_prognoza'] - merged['Cena_rzeczywista'])
+    merged["Data"] = date_to_check.strftime("%Y-%m-%d")
 
     for _, row in merged.iterrows():
         update_actual_price(
-            data=row['Data'],
-            godzina=int(row['Godzina']),
-            cena_rzeczywista=row['Cena_rzeczywista']
+            data=row["Data"],
+            Houra=int(row["Hour"]),
+            cena_rzeczywista=row["Fixing I - Kurs"]
         )
 
-    if os.path.exists(output_csv):
-        history_df = pd.read_csv(output_csv)
-        history_df = pd.concat([history_df, merged], ignore_index=True)
-    else:
-        history_df = merged
-
-    history_df.to_csv(output_csv, index=False)
-    print(f"📁 Zapisano wyniki do {output_csv}")
-
-
-if __name__ == "__main__":
-    compare_predictions_to_actuals()
+    # Nadpisz prognozę
+    merged.to_excel(pred_file, index=False)
+    print(f"✅ Zaktualizowano plik prognozy: {pred_file}")

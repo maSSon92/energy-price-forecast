@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
 import xgboost as xgb
+from app.models.xgb_model import prepare_training_features
 
 
 def fetch_pse_data(dates):
@@ -60,7 +61,7 @@ def fetch_weather_forecast(target_date, lat=52.23, lon=21.01):
             clouds = data.get("cloudcover", [])
             return {
                 h: {
-                    "temp": temps[h] if h < len(temps) else np.nan,
+                    "Temp": temps[h] if h < len(temps) else np.nan,
                     "wind": winds[h] if h < len(winds) else np.nan,
                     "cloud": clouds[h] if h < len(clouds) else np.nan,
                 }
@@ -107,7 +108,7 @@ def fetch_pse_load_forecast(target_date):
     return {}
 
 
-def prepare_features(df):
+def prepare_training_features(df):
     df = df.copy()
     df["Day of Week"] = df["Data"].dt.weekday
     df["Month"] = df["Data"].dt.month
@@ -118,14 +119,14 @@ def prepare_features(df):
     df["Cena_t-24"] = df["Fixing I - Kurs"].shift(24)
     df = df.dropna()
     df["time_of_day"] = df["Hour"].apply(lambda h: 0 if h < 6 else 1 if h < 12 else 2 if h < 18 else 3)
-    for col in ["Forecasted Load", "temp", "wind", "cloud"]:
+    for col in ["Forecasted Load", "Temp", "wind", "cloud"]:
         if col not in df.columns:
             df[col] = 0.0
 
     feature_cols = [
         "Hour", "Day of Week", "Month", "is_weekend", "is_holiday",
         "time_of_day", "Cena_t-1", "Cena_t-24", "Forecasted Load",
-        "temp", "wind", "cloud"
+        "Temp", "wind", "cloud"
     ]
     return df[feature_cols], df["Fixing I - Kurs"], df["Fixing II - Kurs"]
 
@@ -134,7 +135,7 @@ def train_hourly_models(df, target_col):
     models = {}
     for hour in range(24):
         df_hour = df[df["Hour"] == hour]
-        X, y1, y2 = prepare_features(df_hour)
+        X, y1, y2 = prepare_training_features(df_hour)
         y = y1 if target_col == "Fixing I - Kurs" else y2
         model = xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
         model.fit(X, y)
@@ -172,7 +173,7 @@ def predict_day(date_str):
     forecast_weather = fetch_weather_forecast(date_str)
 
     combined["Forecasted Load"] = combined["Hour"].apply(lambda h: forecast_load.get(h, 18000.0))
-    combined["temp"] = combined["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("temp", 15.0))
+    combined["Temp"] = combined["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("Temp", 15.0))
     combined["wind"] = combined["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("wind", 5.0))
     combined["cloud"] = combined["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("cloud", 50.0))
 
@@ -195,17 +196,17 @@ def predict_day(date_str):
     tomorrow_data["Cena_t-1"] = avg_price
     tomorrow_data["Cena_t-24"] = avg_price
     tomorrow_data["Forecasted Load"] = tomorrow_data["Hour"].apply(lambda h: forecast_load.get(h, 18000.0))
-    tomorrow_data["temp"] = tomorrow_data["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("temp", 15.0))
+    tomorrow_data["Temp"] = tomorrow_data["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("Temp", 15.0))
     tomorrow_data["wind"] = tomorrow_data["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("wind", 5.0))
     tomorrow_data["cloud"] = tomorrow_data["Hour"].apply(lambda h: forecast_weather.get(h, {}).get("cloud", 50.0))
 
-    features, _, _ = prepare_features(tomorrow_data)
+    features, _, _ =prepare_training_features(tomorrow_data)
 
     preds_i = [models_i[h].predict([features.iloc[h]])[0] if h in models_i else np.nan for h in range(24)]
     preds_ii = [models_ii[h].predict([features.iloc[h]])[0] if h in models_ii else np.nan for h in range(24)]
 
     return pd.DataFrame({
-        "Godzina": list(range(24)),
+        "Hour": list(range(24)),
         "Fixing I": np.round(preds_i, 2),
         "Fixing II": np.round(preds_ii, 2)
     })

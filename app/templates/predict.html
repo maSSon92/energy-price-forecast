@@ -38,29 +38,30 @@
   };
 </script>
 
-{% if prediction %}
-    <div class="result">
-        <h2>🔮 Prognozowana cena: {{ prediction }} PLN/MWh</h2>
-    </div>
-{% elif day_predictions %}
-    <div class="result">
-        <h2>📈 Prognozy godzinowe:</h2>
-        <table>
-            <thead>
-                <tr><th>Godzina</th><th>Cena [PLN/MWh]</th></tr>
-            </thead>
-            <tbody>
-                {% for row in day_predictions %}
-                <tr>
-                    <td>{{ row['Godzina'] }}</td>
-                    <td>{{ row['Cena'] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{{ download_link }}" class="download-btn">⬇️ Pobierz prognozę do Excela</a>
-    </div>
+<h3>📉 Prognozy godzinowe:</h3>
+{% if day_predictions %}
+<div class="tabela-container">
+    <table class="tabela-prognoz">
+        <thead>
+            <tr>
+                <th>Godzina</th>
+                <th>Fixing I (PLN/MWh)</th>
+                <th>Fixing II (PLN/MWh)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in day_predictions %}
+            <tr>
+                <td>{{ row["Godzina"] }}</td>
+                <td>{{ row["Fixing I"] }}</td>
+                <td>{{ row["Fixing II"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endif %}
+
 
 {% if error %}
     <div class="error">⚠️ {{ error }}</div>

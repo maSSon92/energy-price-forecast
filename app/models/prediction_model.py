@@ -5,7 +5,7 @@ import holidays
 from datetime import datetime, timedelta
 from app.models.helpers.api_helpers import fetch_pse_load_forecast, fetch_weather_forecast
 from app.models.helpers.training import train_hourly_models
-from app.models.helpers.feature_engineering import prepare_features
+from app.models.feature_engineering import prepare_prediction_features
 
 
 def predict_all_hours(df, day=None, month=None):
@@ -14,29 +14,21 @@ def predict_all_hours(df, day=None, month=None):
         target_date = datetime.now().strftime("%Y-%m-%d")
     else:
         target_date = datetime(datetime.today().year, month, day).strftime("%Y-%m-%d") if day and month else df["Data"].iloc[0].date().strftime("%Y-%m-%d")
+        print("DEBUG: target_date =", target_date, type(target_date))
 
     avg_price = df["Fixing I - Kurs"].mean() if "Fixing I - Kurs" in df.columns else 350.0
     hour_list = list(range(24))
     load_forecast = fetch_pse_load_forecast(target_date)
     weather_forecast = fetch_weather_forecast(target_date)
 
-    future_df = pd.DataFrame({
-        "Hour": hour_list,
-        "Data": pd.date_range(start=target_date, periods=24, freq='H')
-    })
-    future_df["Day of Week"] = future_df["Data"].dt.weekday
-    future_df["Month"] = future_df["Data"].dt.month
-    future_df["is_weekend"] = future_df["Day of Week"].isin([5, 6]).astype(int)
-    future_df["is_holiday"] = future_df["Data"].dt.date.isin(holidays.CountryHoliday("PL")).astype(int)
-    future_df["time_of_day"] = future_df["Hour"].apply(lambda h: 0 if h < 6 else 1 if h < 12 else 2 if h < 18 else 3)
-    future_df["Cena_t-1"] = avg_price
-    future_df["Cena_t-24"] = avg_price
-    future_df["Forecasted Load"] = future_df["Hour"].apply(lambda h: load_forecast.get(h, 18000.0))
-    future_df["temp"] = future_df["Hour"].apply(lambda h: weather_forecast.get(h, {}).get("temp", 15.0))
-    future_df["wind"] = future_df["Hour"].apply(lambda h: weather_forecast.get(h, {}).get("wind", 5.0))
-    future_df["cloud"] = future_df["Hour"].apply(lambda h: weather_forecast.get(h, {}).get("cloud", 50.0))
+    # 📊 Dane cech dla konkretnej daty
+    features = prepare_prediction_features(
+        target_date,
+        weather=weather_forecast,
+        pse_load=load_forecast,
+        avg_price=avg_price
+    )
 
-    features, y1_dummy, y2_dummy = prepare_features(future_df)
 
     print(f"🎯 Data do prognozy: {target_date}")
     print(f"📉 Średnia cena Fixing I (avg_price): {avg_price}")
@@ -58,9 +50,10 @@ def predict_all_hours(df, day=None, month=None):
     preds_i = [float(models_i[h].predict([features.iloc[h]])[0]) if h in models_i else 0.0 for h in hour_list]
     preds_ii = [float(models_ii[h].predict([features.iloc[h]])[0]) if h in models_ii else 0.0 for h in hour_list]
     return [
-        {"Godzina": h, "Prognozowana cena": round((preds_i[h] + preds_ii[h]) / 2, 2)}
+        {"Hour": h, "Fixing I": round(preds_i[h], 2), "Fixing II": round(preds_ii[h], 2)}
         for h in hour_list
     ]
+
 
 
 def load_data_from_excel():
@@ -103,6 +96,7 @@ def train_model(df):
 def prepare_input_dataframe_for_day(day, month):
     df = load_data_from_excel()
     target_date = datetime(datetime.today().year, month, day)
+    print("DEBUG: target_date =", target_date, type(target_date))
     target_2024 = target_date.replace(year=2024)
     start = target_2024 - timedelta(days=7)
     end = target_2024

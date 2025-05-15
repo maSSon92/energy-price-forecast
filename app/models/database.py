@@ -12,7 +12,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT,
-            godzina INTEGER,
+            Hour INTEGER,
             cena_prognoza REAL,
             cena_rzeczywista REAL,
             blad REAL
@@ -21,29 +21,29 @@ def init_db():
     conn.commit()
     conn.close()
 
-def save_prediction(data, godzina, cena_prognoza):
+def save_prediction(data, Hour, cena_prognoza):
     conn = sqlite3.connect("app/static/data/predictions.db")
     c = conn.cursor()
 
     # Sprawdzenie czy istnieje już taki rekord
-    c.execute("SELECT id FROM predictions WHERE data = ? AND godzina = ?", (data, godzina))
+    c.execute("SELECT id FROM predictions WHERE data = ? AND Hour = ?", (data, Hour))
     exists = c.fetchone()
 
     if not exists:
-        c.execute("INSERT INTO predictions (data, godzina, cena_prognoza) VALUES (?, ?, ?)",
-                  (data, godzina, cena_prognoza))
+        c.execute("INSERT INTO predictions (data, Hour, cena_prognoza) VALUES (?, ?, ?)",
+                  (data, Hour, cena_prognoza))
 
     conn.commit()
     conn.close()
 
-def update_actual_price(data, godzina, cena_rzeczywista):
+def update_actual_price(data, Hour, cena_rzeczywista):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     # policz blad tylko jeśli prognoza istnieje
     c.execute("""
         SELECT cena_prognoza FROM predictions
-        WHERE data = ? AND godzina = ?
-    """, (data, godzina))
+        WHERE data = ? AND Hour = ?
+    """, (data, Hour))
     row = c.fetchone()
     if row:
         cena_prognoza = row[0]
@@ -51,15 +51,15 @@ def update_actual_price(data, godzina, cena_rzeczywista):
         c.execute("""
             UPDATE predictions
             SET cena_rzeczywista = ?, blad = ?
-            WHERE data = ? AND godzina = ?
-        """, (cena_rzeczywista, blad, data, godzina))
+            WHERE data = ? AND Hour = ?
+        """, (cena_rzeczywista, blad, data, Hour))
     conn.commit()
     conn.close()
 
 def get_all_predictions():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT * FROM predictions ORDER BY data, godzina")
+    c.execute("SELECT * FROM predictions ORDER BY data, Hour")
     rows = c.fetchall()
     conn.close()
     return rows

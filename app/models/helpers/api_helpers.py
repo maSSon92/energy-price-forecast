@@ -27,7 +27,7 @@ def fetch_weather_forecast(date_str, lat=52.23, lon=21.01):
             data = r.json().get("hourly", {})
             return {
                 h: {
-                    "temp": data.get("temperature_2m", [])[h],
+                    "Temp": data.get("temperature_2m", [])[h],
                     "wind": data.get("windspeed_10m", [])[h],
                     "cloud": data.get("cloudcover", [])[h]
                 } for h in range(24)
@@ -39,7 +39,7 @@ def fetch_weather_forecast(date_str, lat=52.23, lon=21.01):
 def fetch_actual_prices(target_date):
     """
     Pobiera rzeczywiste ceny Fixing I/II z API PSE dla danej daty.
-    Zwraca dict: godzina -> {"fix_i": ..., "fix_ii": ...}
+    Zwraca dict: Hour -> {"fix_i": ..., "fix_ii": ...}
     """
     url = f"https://api.raporty.pse.pl/api/rce-pln?$filter=business_date eq '{target_date}'"
     try:

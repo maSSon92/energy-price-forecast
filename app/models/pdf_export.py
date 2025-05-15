@@ -9,7 +9,7 @@ import sqlite3
 def export_day_to_pdf(date_str, output_path):
     conn = sqlite3.connect("app/static/data/predictions.db")
     c = conn.cursor()
-    c.execute("SELECT godzina, cena_prognoza, cena_rzeczywista, blad FROM predictions WHERE data = ? ORDER BY godzina", (date_str,))
+    c.execute("SELECT Hour, cena_prognoza, cena_rzeczywista, blad FROM predictions WHERE data = ? ORDER BY Hour", (date_str,))
     rows = c.fetchall()
     conn.close()
 
@@ -25,13 +25,13 @@ def export_day_to_pdf(date_str, output_path):
         c.drawImage(img_path, 50, height - 320, width=500, preserveAspectRatio=True)
 
     # Dane do tabeli
-    data = [["Godzina", "Prognoza [zł/MWh]", "Rzeczywista", "Błąd [%]"]]
+    data = [["Hour", "Prognoza [zł/MWh]", "Rzeczywista", "Błąd [%]"]]
     for row in rows:
-        godzina = row[0]
+        Hour = row[0]
         prognoza = f"{row[1]:.2f}" if row[1] is not None else "-"
         rzeczywista = f"{row[2]:.2f}" if row[2] is not None else "-"
         blad = f"{row[3]:.2f}%" if row[3] is not None else "-"
-        data.append([godzina, prognoza, rzeczywista, blad])
+        data.append([Hour, prognoza, rzeczywista, blad])
 
     table = Table(data, colWidths=[80, 120, 120, 100])
     table.setStyle(TableStyle([
