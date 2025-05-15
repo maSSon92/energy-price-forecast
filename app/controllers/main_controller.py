@@ -122,7 +122,10 @@ def index():
             df_export["Predicted Fixing I - Kurs"] = df_export["Cena"]
             df_export["Predicted Fixing II - Kurs"] = df_export["Cena"]
 
-            excel_path, chart_path = save_predictions(df_export)
+            data_str = datetime(datetime.today().year, month, day).strftime('%Y-%m-%d')
+            excel_path, chart_path = save_predictions(df_export, forecast_date=data_str)
+            generate_pdf_report(df_export, image_path=chart_path, forecast_date=data_str)
+
 
             # ✅ Porównanie z rzeczywistymi danymi (jeśli już są)
             compare_predictions_to_actuals()
@@ -189,9 +192,12 @@ def predict():
                 df_export["Predicted Fixing I - Kurs"] = df_export["Cena"]
                 df_export["Predicted Fixing II - Kurs"] = df_export["Cena"]
 
-                excel_path, chart_path = save_predictions(df_export)
+                forecast_date = f"{datetime.today().year}-{month:02d}-{day:02d}"
+                excel_path, chart_path = save_predictions(df_export, forecast_date=forecast_date)
+
                 compare_predictions_to_actuals()
-                generate_pdf_report(df_export, image_path=chart_path)
+                generate_pdf_report(df_export, image_path=chart_path, forecast_date=data_str)
+
                 download_link = "/static/exports/" + os.path.basename(excel_path)
             
             else:

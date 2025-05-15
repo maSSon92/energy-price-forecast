@@ -13,7 +13,7 @@ def predict_all_hours(df, day=None, month=None):
         print("⚠️ Brak danych w df – używam daty dzisiejszej.")
         target_date = datetime.now().strftime("%Y-%m-%d")
     else:
-        target_date = df["Data"].iloc[0].date().strftime("%Y-%m-%d")
+        target_date = datetime(datetime.today().year, month, day).strftime("%Y-%m-%d") if day and month else df["Data"].iloc[0].date().strftime("%Y-%m-%d")
 
     avg_price = df["Fixing I - Kurs"].mean() if "Fixing I - Kurs" in df.columns else 350.0
     hour_list = list(range(24))

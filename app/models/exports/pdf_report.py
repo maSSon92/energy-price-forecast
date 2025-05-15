@@ -6,15 +6,22 @@ from datetime import datetime
 def safe(text):
     return str(text).encode("latin-1", "replace").decode("latin-1")
 
-def generate_pdf_report(predictions_df, image_path=None, folder="results"):
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    pdf_path = os.path.join(folder, f"Raport_{today_str}.pdf")
+def generate_pdf_report(predictions_df, image_path=None, forecast_date=None, folder="app/static/exports"):
+    # Ustal datę raportu
+    if forecast_date is None:
+        forecast_date = datetime.now().strftime('%Y-%m-%d')
+
+    parsed_date = datetime.strptime(forecast_date, "%Y-%m-%d")
+    date_str = parsed_date.strftime('%d_%m')
+    title_str = parsed_date.strftime('%Y-%m-%d')
+
     os.makedirs(folder, exist_ok=True)
+    pdf_path = os.path.join(folder, f"raport_{date_str}.pdf")
 
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(200, 10, safe(f"Raport dzienny - {today_str}"), ln=True, align="C")
+    pdf.cell(200, 10, safe(f"Raport dzienny - {title_str}"), ln=True, align="C")
 
     pdf.set_font("Arial", size=10)
     subtitle = "Model: XGBoost per hour, dane: API PSE + pogoda"
@@ -49,5 +56,4 @@ def generate_pdf_report(predictions_df, image_path=None, folder="results"):
 
     pdf.output(pdf_path)
     print(f"📄 PDF zapisany: {pdf_path}")
-    pdf_path = os.path.join("app/static/exports", f"raport_{today_str}.pdf")
     return pdf_path
