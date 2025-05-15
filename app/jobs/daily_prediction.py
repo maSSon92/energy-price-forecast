@@ -36,7 +36,7 @@ def run_daily_prediction():
         df_export["Predicted Fixing I - Kurs"] = df_export["Prognozowana cena"]
         df_export["Predicted Fixing II - Kurs"] = df_export["Prognozowana cena"]
 
-        excel_path, chart_path = save_predictions(df_export)
+        excel_path, chart_path = save_predictions(df_export, folder="app/static/exports")
         compare_predictions_to_actuals()
         generate_pdf_report(df_export, image_path=chart_path)
 

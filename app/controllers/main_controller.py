@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 main = Blueprint('main', __name__)
 
 df = load_data_from_excel()
-model = train_model(df)
 
 SECRET_PASSWORD = "admin123"  # można potem ukryć jako zmienną środowiskową
 
@@ -145,6 +144,10 @@ def index():
 
 @main.route('/predict', methods=['GET', 'POST'])
 def predict():
+    from app.models.exports.export_utils import save_predictions
+    from app.models.evaluation.compare import compare_predictions_to_actuals
+    from app.models.exports.pdf_report import generate_pdf_report
+
     prediction = None
     error = None
     day_predictions = None
@@ -156,36 +159,41 @@ def predict():
             month = int(request.form['month'])
             if not validate_date(day, month):
                 error = "❌ Nieprawidłowa data — wybierz dzień od dziś do 7 dni w przód."
-                return render_template('predict.html',
-                           prediction=None,
-                           error=error,
-                           day_predictions=None,
-                           download_link=None)
+                return render_template('predict.html', prediction=None, error=error, day_predictions=None, download_link=None)
 
             mode = request.form.get('mode')
 
-            df = load_data_from_excel()
-            model = train_model(df)
-
             if mode == 'hour':
+                df = load_data_from_excel()
+                model = train_model(df)
                 hour = int(request.form['hour'])
                 prediction = predict_price(hour, day, month, model)
+
             elif mode == 'day':
                 df_input = prepare_input_dataframe_for_day(day, month)
-                day_predictions = predict_all_hours(df_input, model)
+                if df_input.empty:
+                    raise ValueError("Brak danych historycznych do predykcji.")
+                
+                day_predictions = predict_all_hours(df_input)
                 data_str = datetime(datetime.today().year, month, day).strftime('%Y-%m-%d')
+
                 for row in day_predictions:
                     godzina = row.get("Godzina")
-                    cena = row.pop("Prognozowana cena")
-                    row["Cena"] = cena
+                    cena = float(row.pop("Prognozowana cena"))
+                    row["Cena"] = float(cena)
+
                     save_prediction(data_str, godzina, cena)
 
-                filename = f"prognoza_{day:02d}_{month:02d}.xlsx"
-                folder = os.path.join('static', 'exports')
-                os.makedirs(folder, exist_ok=True)
-                path = os.path.join(folder, filename)
-                pd.DataFrame(day_predictions).to_excel(path, index=False)
-                download_link = f"/static/exports/{filename}"
+                df_export = pd.DataFrame(day_predictions)
+                df_export["Hour"] = df_export["Godzina"]
+                df_export["Predicted Fixing I - Kurs"] = df_export["Cena"]
+                df_export["Predicted Fixing II - Kurs"] = df_export["Cena"]
+
+                excel_path, chart_path = save_predictions(df_export)
+                compare_predictions_to_actuals()
+                generate_pdf_report(df_export, image_path=chart_path)
+                download_link = "/static/exports/" + os.path.basename(excel_path)
+            
             else:
                 error = "Nieprawidłowy tryb prognozy."
 
@@ -197,6 +205,7 @@ def predict():
                            error=error,
                            day_predictions=day_predictions,
                            download_link=download_link)
+
 
 @main.route('/about')
 def about():
@@ -280,3 +289,21 @@ def downloads():
     else:
         files = [f for f in os.listdir(folder) if f.endswith('.xlsx') or f.endswith('.pdf')]
     return render_template('downloads.html', files=files)
+
+@main.route('/debug/files')
+def debug_file_list():
+    folder = os.path.join('app', 'static', 'exports')
+    if not os.path.exists(folder):
+        return "Folder exports nie istnieje."
+
+    files = os.listdir(folder)
+    detailed_files = []
+    for f in files:
+        path = os.path.join(folder, f)
+        if os.path.isfile(path):
+            size = os.path.getsize(path)
+            mtime = os.path.getmtime(path)
+            modified = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+            detailed_files.append(f"{f} — {size}B — zmodyfikowany: {modified}")
+
+    return "<br>".join(detailed_files) if detailed_files else "Brak plików."
